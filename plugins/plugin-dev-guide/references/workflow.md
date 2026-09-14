@@ -17,12 +17,17 @@
 | Subagent | https://code.claude.com/docs/en/sub-agents.md |
 | 作業の品質 | https://code.claude.com/docs/en/best-practices.md |
 | Marketplace | https://code.claude.com/docs/en/plugin-marketplaces.md |
+| GitHub Actions | https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax |
 
 ## 成果物
 
 最小構成は`.claude-plugin/plugin.json`、`skills/<name>/SKILL.md`、利用者向けREADME。目的に応じてagents、hooks、MCPなどを追加する。`.claude-plugin/`内にskillsやagentsを置かない。
 
 Marketplaceを作る場合はリポジトリ直下の`.claude-plugin/marketplace.json`に名前・管理者・Pluginのsourceを記述する。各Pluginは独立してコピーされるため、資料とスクリプトはその配布ディレクトリ内に収める。
+
+## バージョン・タグ・リリース
+
+配布するPluginではManifestの`version`を正本にし、リリースタグを`<plugin-name>--v<version>`とする。リリースに関係する変更では、Manifest版を更新し、タグと一致することをCIで検証する。GitHub ActionsでタグPushからGitHub Releaseを作成する構成・権限・失敗時の扱いは、同梱の[リリース管理資料](release-management.md)を読む。
 
 ## 実装前に決める評価
 
@@ -47,6 +52,8 @@ claude --plugin-dir ./my-plugin
 対話画面で`/my-plugin:<skill-name>`を呼び出す。変更後は`/reload-plugins`を使う。CLI未導入の場合はJSON/YAMLと参照整合性まで確認し、Claude Codeでの検証は未実施と報告する。
 
 配布前には、ローカルMarketplaceからインストールしたキャッシュ内に資料があることも確かめる。利用者の既存設定を変えない検証が必要なら、専用の一時`CLAUDE_CONFIG_DIR`を使う。
+
+GitHub Actionsを作る場合は、PRと`main`で同じ構成検証を行い、タグPushではタグとManifest版を照合してからReleaseを作成する。タグを作る前に通常CIの成功を確認し、タグを移動して再リリースする運用にしない。
 
 ## 完成条件
 

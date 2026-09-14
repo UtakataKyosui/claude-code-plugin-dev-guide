@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const names = ['agent-skills.md', 'hooks.md', 'sub-agents.md'];
+const names = ['agent-skills.md', 'hooks.md', 'release-management.md', 'sub-agents.md'];
 const check = process.argv.includes('--check');
 const destination = path.join(root, 'plugins/plugin-dev-guide/references');
 if (!check) await mkdir(destination, { recursive: true });
@@ -25,4 +25,4 @@ for (const name of names) {
   }
 }
 if (different) process.exitCode = 1;
-else console.log(check ? 'Plugin references are in sync.' : 'Synced 3 reference documents.');
+else console.log(check ? 'Plugin references are in sync.' : `Synced ${names.length} reference documents.`);

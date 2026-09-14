@@ -13,6 +13,16 @@ claude plugin validate ./plugins/plugin-dev-guide
 
 `check-plugin.mjs`はカタログとPlugin名の整合、資料の同期、Skillからの参照が配布範囲内にあること、ローカル状態の混入を検査する。Claude CodeのバリデーターでManifestとSkillも検証する。
 
+## タグとReleaseの検証
+
+Manifestの版とタグの整合は、リリース前にローカルでも確認する。
+
+```sh
+node scripts/check-release-tag.mjs plugin-dev-guide--v0.1.0
+```
+
+`0.1.0`は実際の`plugins/plugin-dev-guide/.claude-plugin/plugin.json`の`version`に置き換える。異なる版・誤ったPlugin名・SemVer以外の版で失敗することを確認する。GitHub ActionsでのRelease作成までをローカルで再現する必要はない。タグをテスト目的でPushすると実Releaseが作成されるため、実際の配布版だけに使う。
+
 ## Marketplaceからの導入
 
 専用の一時設定ディレクトリを使う。利用者の通常のインストール状態を変えない。シェルでリポジトリルートから実行する。

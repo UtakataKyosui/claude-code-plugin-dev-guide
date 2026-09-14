@@ -36,8 +36,8 @@ for (const file of skills) {
     assert.ok(target.startsWith(plugin + path.sep), `Escaping reference: ${match[1]}`);
   }
 }
-for (const name of ['agent-skills.md', 'hooks.md', 'sub-agents.md']) {
+for (const name of ['agent-skills.md', 'hooks.md', 'release-management.md', 'sub-agents.md']) {
   assert.equal(await readFile(path.join(plugin, 'references', name), 'utf8'),
     await readFile(path.join(root, 'docs', name), 'utf8'), `Out of sync: ${name}`);
 }
-console.log(`Package checks passed: ${skills.length} skills, 3 synchronized guides, all explicit skill references contained in plugin.`);
+console.log(`Package checks passed: ${skills.length} skills, 4 synchronized guides, all explicit skill references contained in plugin.`);

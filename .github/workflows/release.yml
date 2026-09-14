@@ -1,0 +1,46 @@
+name: Release Plugin Dev Guide
+
+on:
+  push:
+    tags:
+      - 'plugin-dev-guide--v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          check-latest: true
+      - name: Check release tag, references, and package boundaries
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          node scripts/check-release-tag.mjs "$TAG"
+          node scripts/sync-plugin-docs.mjs --check
+          node scripts/check-plugin.mjs
+      - name: Install Claude Code
+        run: npm install --global @anthropic-ai/claude-code
+      - name: Validate marketplace and plugin schema
+        run: |
+          claude plugin validate .
+          claude plugin validate ./plugins/plugin-dev-guide
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(node -p "require('./plugins/plugin-dev-guide/.claude-plugin/plugin.json').version")
+          prerelease=()
+          if [[ "$version" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$TAG" --verify-tag --title "Plugin Dev Guide $version" --generate-notes "${prerelease[@]}"

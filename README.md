@@ -57,6 +57,12 @@ claude --plugin-dir ./plugins/plugin-dev-guide
 
 `references/workflow.md`はPlugin専用の手順書です。リリースでは`plugin.json`の`version`を更新し、同期・検証を行ってから公開します。動作確認のケースは[テスト手順](tests/plugin-guide.md)にまとめています。構文・インストールの成功と、モデルが依頼を正しく処理したことは別々に確認します。
 
+## GitHub ActionsによるCI・タグ・リリース管理
+
+このリポジトリは、PR・`main`へのPushでPlugin構成を検証し、`plugin-dev-guide--vX.Y.Z`タグのPushでGitHub Releaseを作成します。Manifest版とタグの一致をCIが確認するため、版と異なるタグではReleaseを作成しません。
+
+リリース手順、workflowの構成、GitHub権限、他のPluginへ流用する例は[GitHub Actionsによるバージョン・リリース管理](docs/release-management.md)にまとめています。
+
 ## 良い構成要素を設計するためのガイド
 
 公式資料をもとに、設計基準・具体例・避けたい設計・検証方法をまとめています。

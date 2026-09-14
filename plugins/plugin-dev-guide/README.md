@@ -26,7 +26,7 @@ Claude Codeを導入・認証済みの環境で、Marketplaceが公開された�
 
 - `skills/guide/`: 作成・設計の入口。
 - `skills/review/`: 既存Pluginの点検。
-- `references/`: 開発手順と設計資料。インストール先から参照可能。
+- `references/`: 開発手順、設計資料、GitHub Actionsによるリリース管理。インストール先から参照可能。
 
 自動実行するHooks、MCP接続、追加のツール事前許可は含みません。ファイル読み書きやコマンド実行には利用環境の権限が適用されます。公式資料の更新確認にはネットワークが必要です。資料だけで動作を保証せず、利用者のClaude Codeバージョンで検証します。
 
@@ -39,3 +39,7 @@ Claude Codeを導入・認証済みの環境で、Marketplaceが公開された�
 ```
 
 変更時はManifestのバージョンを更新します。リポジトリの`docs/`が設計資料の正本です。同期・検証方法はリポジトリREADMEを参照してください。
+
+## バージョンとGitHub Release
+
+Manifestの`version`を更新したら、`plugin-dev-guide--v<version>`タグを対象コミットへPushします。GitHub ActionsがタグとManifestを照合し、成功時にGitHub Releaseを作成します。詳細、CIの作成例、必要な権限は同梱の[リリース管理資料](references/release-management.md)を参照してください。
