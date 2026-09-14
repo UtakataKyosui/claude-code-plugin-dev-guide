@@ -10,6 +10,96 @@
 
 通常のSubagentは独立したコンテキストで作業します。会話継承などの動作はモードやバージョンで異なるため、「親の事情をすべて知っている」と仮定せず、依頼に必要な情報を渡す設計にします。最新の実行モデルも[Subagents](https://code.claude.com/docs/en/sub-agents.md)で確認してください。
 
+## Pluginで使えるYAMLフロントマター
+
+確認日: 2026-09-15。[公式の全項目](https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields)と[Plugin固有の制限](https://code.claude.com/docs/en/sub-agents.md)を照合した一覧です。`my-plugin/agents/<file>.md`の先頭行を`---`にして記述し、閉じる`---`の後を担当のシステムプロンプトにします。`name`と`description`を必ず設定してください。
+
+### 有効・条件付きの項目
+
+| キー | YAMLの値の例 | 効果・省略時・条件 |
+| --- | --- | --- |
+| `name` | `name: api-reviewer` | 担当識別子。小文字とハイフンを使い、`:`を含めない。Pluginの接頭辞は自分で書かない。 |
+| `description` | `description: 公開API変更の互換性を確認する。` | 委任先の選択条件。必須。 |
+| `tools` | `tools: Read, Grep, Glob` | 利用可能なツールを限定。省略するとSubagentに利用可能なツールを継承。 |
+| `disallowedTools` | `disallowedTools: Write, Edit` | 継承・指定された集合からツールを除外。`Bash(git push *)`でもBash全体が除外されるため、コマンド単位の拒否として使わない。 |
+| `model` | `model: inherit` | 親のモデルを使う。別の利用可能モデルも指定できる。省略時は公式のモデル優先順位による。 |
+| `maxTurns` | `maxTurns: 12` | 作業ターン上限。上限到達は成功ではない。途中結果として親が扱う。 |
+| `skills` | `skills: ["my-plugin:api-rules"]` | Skill本文を事前読み込み。利用可能Skillの制限ではない。対象が存在し、自動呼び出し可能であることが必要。 |
+| `memory` | `memory: local` | `user` / `project` / `local`。省略時はこの設定による永続メモリなし。自動メモリ無効時は効かない。 |
+| `background` | `background: true` | バックグラウンド実行を強制。`false`は全モードで前面実行を保証する指定ではない。 |
+| `effort` | `effort: high` | `low` / `medium` / `high` / `xhigh` / `max`。モデル依存。省略時はセッションを継承。 |
+| `isolation` | `isolation: worktree` | 一時Git worktreeで実行。親の未コミット変更を自動で引き継ぐ前提にしない。 |
+| `color` | `color: cyan` | 表示色。`red` / `blue` / `green` / `yellow` / `purple` / `orange` / `pink` / `cyan`。 |
+| `initialPrompt` | `initialPrompt: 対象リポジトリの構成を確認してください。` | `--agent`や`agent`設定でメイン担当にした場合の初回入力。通常の委任タスク本文の代わりにはならない。 |
+| `experimental` | `experimental: {cacheTtl: 5m}` | ファイル定義で`cacheTtl: 5m` / `1h`を指定。v2.1.248以降。`1h`には利用条件があり、実験的項目として扱う。 |
+
+`memory`を有効にするとメモリ管理用のRead・Write・Editも有効になります。読み取り専用担当に安易に追加しないでください。`project`は共有可能なプロジェクト内メモリ、`local`は共有しないプロジェクト内メモリ、`user`はプロジェクト横断のメモリです。保存内容とバージョン管理方針も決めます。
+
+### 記述できてもPluginでは無視される項目
+
+| キー | 一般のSubagentでの例 | Pluginでの対応 |
+| --- | --- | --- |
+| `permissionMode` | `permissionMode: plan` | Pluginでは無効。読み取り担当は`tools`で限定する。一般スコープでは`default` / `acceptEdits` / `auto` / `dontAsk` / `bypassPermissions` / `plan`、`manual`は`default`の別名。 |
+| `mcpServers` | `mcpServers: [issue-tracker]` | Pluginでは無効。Pluginルートの`.mcp.json`で接続を定義し、必要なMCPツールを`tools`で選ぶ。 |
+| `hooks` | `hooks: {PreToolUse: []}` | Pluginでは無効。Plugin全体の`hooks/hooks.json`を使う。空配列の例は形式の説明用で処理は登録しない。 |
+
+これらが必要なら利用者が`.claude/agents/`などに置く別の構成もありますが、それはPlugin配下の定義と異なります。コピー先での有効範囲を利用者に説明します。出典: [Plugin subagentsの制限](https://code.claude.com/docs/en/sub-agents.md)。
+
+### 例1: 読み取りレビューとSkillの事前読み込み
+
+```markdown
+---
+name: api-reviewer
+description: 公開API変更の互換性を調べ、根拠付きで報告する。
+tools: Read, Grep, Glob
+disallowedTools: Write, Edit, Bash
+model: inherit
+effort: medium
+maxTurns: 12
+skills:
+  - my-plugin:api-rules
+color: cyan
+---
+
+親から渡された変更前後の情報を、事前読み込みしたAPI規約と照合してください。
+結論、根拠となるファイル位置、未確認事項を返します。修正はしません。
+```
+
+`my-plugin:api-rules`は[Skill側の例2](agent-skills.md#例2-対象パスに限定する自動利用の知識)を用意し、ロードされた名前と一致させます。`user-invocable: false`でも自動利用は可能ですが、`disable-model-invocation: true`のSkillは事前読み込みできません。`tools`から`Skill`を外すことと、`skills`で本文を注入することは別です。
+
+### 例2: 隔離環境で修正案を作る担当
+
+```markdown
+---
+name: fix-proposer
+description: 指定された不具合の修正案と検証結果を隔離環境で作成する。
+tools: Read, Grep, Glob, Edit, Write, Bash
+model: inherit
+maxTurns: 20
+background: true
+isolation: worktree
+---
+
+対象の不具合と再現条件を受け取り、修正案と必要な検証を行ってください。
+コミット、push、公開は行いません。
+結果に作業場所、変更ファイル、実行した検証、残る問題を含めてください。
+```
+
+worktreeの開始点は通常、親の`HEAD`ではなく既定ブランチです。親の作業中の変更を調べる用途では、対象コミットや差分の受け渡し方法を別途決めます。隔離設定はネットワークや外部サービスの副作用まで隔離するものではありません。
+
+### 条件付き項目を追加する例
+
+次は既存フロントマターへ追加する断片です。目的がある場合だけ使います。
+
+```yaml
+memory: local
+experimental:
+  cacheTtl: 5m
+initialPrompt: リポジトリの構成を確認し、今回調査すべき点を整理してください。
+```
+
+`memory`は継続的に知識を蓄える担当向けです。`initialPrompt`を試す場合は、ロードされた識別子を確認して`claude --plugin-dir ./my-plugin --agent my-plugin:api-reviewer`のようにメイン担当として起動します。通常のSubagentへの委任では親から具体的な依頼を渡してください。
+
 ## Skill・Hookとの使い分け
 
 | 必要なもの | 主な候補 | 例 |

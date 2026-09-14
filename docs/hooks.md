@@ -16,6 +16,133 @@ Hookはライフサイクルのイベントに接続します。固定ルール�
 
 command型は標準入力でJSONを受け取ります。`PreToolUse`の終了コード2はツール実行をブロックしますが、終了コード1だけでは通常ブロックしません。起動失敗やタイムアウトも、必ずブロックするとは限りません。イベントごとの仕様を確認してください。出典: [Hooks reference](https://code.claude.com/docs/en/hooks.md)。
 
+## Pluginでの設定場所とYAMLの有効範囲
+
+Hook自体は`SKILL.md`のようなMarkdownファイルではありません。PluginのHookは通常`hooks/hooks.json`にJSONで定義し、Skillから登録するときにYAMLフロントマターの`hooks`を使います。
+
+| 設定場所 | Pluginで有効か | 登録期間 |
+| --- | --- | --- |
+| `my-plugin/hooks/hooks.json` | 有効、JSON形式 | Pluginが有効な間 |
+| `my-plugin/skills/<name>/SKILL.md`の`hooks` | 有効、YAML形式 | Skill呼び出し後、セッションの残り |
+| `my-plugin/agents/<name>.md`の`hooks` | **無視される** | 登録されない |
+| `.claude/agents/<name>.md`の`hooks` | Plugin外の別構成 | そのSubagentの実行中 |
+
+一般のSubagentの例をPluginへコピーしても、`hooks`は有効になりません。出典: [Hooks in skills and agents](https://code.claude.com/docs/en/hooks#hooks-in-skills-and-agents)、[Plugin subagentsの制限](https://code.claude.com/docs/en/sub-agents.md)。
+
+### SkillのフロントマターにHookを置く例
+
+`my-plugin/skills/checked-review/SKILL.md`に置きます。
+
+```markdown
+---
+name: checked-review
+description: 同梱のパス検査を登録して指定ファイルをレビューする。
+disable-model-invocation: true
+hooks:
+  PreToolUse:
+    - matcher: "Write|Edit"
+      hooks:
+        - type: command
+          command: node
+          args: ["${CLAUDE_PLUGIN_ROOT}/scripts/check-protected-path.mjs"]
+          timeout: 5
+---
+
+指定されたファイルをレビューし、指摘を返してください。
+保護対象の検査Hookは、このSkillの応答後もセッションに残ります。
+```
+
+`/my-plugin:checked-review`を呼び出して初めて登録されます。後述の検査スクリプトを実装し、Node.jsを用意する必要があります。Skillを実行する前から検査したい場合は`hooks/hooks.json`に置いてください。
+
+### YAMLの階層と追加オプション
+
+| 設定 | 記述位置・例 | 意味 |
+| --- | --- | --- |
+| イベント | `hooks`直下の`PreToolUse:` | 発火するタイミング。イベントごとに使える決定方法が異なる。 |
+| `matcher` | イベント配列内の`matcher: "Write\|Edit"` | 対象ツールなどを絞る。何と照合するかはイベント依存。 |
+| `hooks` | matcherと同じ階層の配列 | 実行するハンドラー。外側の`hooks`と混同しない。 |
+| `type` | ハンドラー内の`type: command` | 処理の種類。例ではシェルコマンド。 |
+| `command` | ハンドラー内の文字列 | 実行するコマンド。同梱スクリプトにはPluginのパス変数を使う。 |
+| `timeout` | ハンドラー内の`timeout: 5` | 秒単位の上限。超過時の決定はイベント・方式に依存。 |
+| `once` | ハンドラー内の`once: true` | SkillのHookを最初の成功後に解除する。継続的な保護には使わない。 |
+
+一度だけのチェックにする場合は、上の`timeout`と同じ階層に次を追加します。
+
+```yaml
+once: true
+```
+
+これはSkillの呼び出し回数制限ではありません。Skillの`hooks`にはイベント別のHook構造を渡し、`settings`などの追加の階層で包みません。JSONで記述する場合も対応するオブジェクト・配列の形は同じです。ハンドラーには種類ごとの追加フィールドがあるため、HTTP・MCP・prompt・agent型を使う際は[Hook handler fields](https://code.claude.com/docs/en/hooks#hook-handler-fields)を確認してください。この表はフロントマターへの組み込み方とcommand型の例を対象にしています。
+
+### ハンドラーの全設定項目
+
+上の表と合わせて、確認日時点の公式ハンドラーフィールドを一覧化します。以下の例はハンドラー内の設定です。種類が異なるフィールドを一つのハンドラーに混在させないでください。
+
+| 対象の型 | キーと値の例 | 条件・用途 |
+| --- | --- | --- |
+| 全型 | `type: command` | 必須。`command` / `http` / `mcp_tool` / `prompt` / `agent`。 |
+| 全型 | `if: "Edit(*.ts)"` | ツールイベントで引数まで絞る条件。非ツールイベントに指定すると実行されない。 |
+| 全型 | `timeout: 5` | 秒単位。既定値は型・イベントによる。非同期commandには適用されない。 |
+| 全型 | `statusMessage: 変更内容を確認中` | 実行中の表示文言。 |
+| 全型 | `once: true` | Skillフロントマターのみ有効。成功後に解除。拒否・失敗・時間超過では解除されない。 |
+| command | `command: node` | 必須。`args`ありでは実行ファイルのみ、なしではシェルコマンド。 |
+| command | `args: ["${CLAUDE_PLUGIN_ROOT}/scripts/check.mjs"]` | シェルを介さず引数配列で実行。パス変数を含む場合に推奨。 |
+| command | `async: true` | 結果を待たない。実行前の拒否判定には使わない。 |
+| command | `asyncRewake: true` | バックグラウンドで実行し、終了コード2でClaudeを起こす。 |
+| command | `shell: powershell` | `bash` / `powershell`。`args`ありでは無視される。Skill本文の`shell`とは別。 |
+| http | `url: "http://localhost:8080/check"` | 必須。イベント入力の送信先。 |
+| http | `headers: {Authorization: "Bearer $HOOK_TOKEN"}` | 追加ヘッダー。秘密値そのものは書かない。 |
+| http | `allowedEnvVars: [HOOK_TOKEN]` | ヘッダーで展開する環境変数。未指定の変数は空になる。 |
+| mcp_tool | `server: "plugin:my-plugin:scanner"` | 必須。接続済みサーバー。Pluginのサーバーはスコープ付き識別子。 |
+| mcp_tool | `tool: scan` | 必須。呼び出すツール名。 |
+| mcp_tool | `input: {file: "${tool_input.file_path}"}` | 入力JSONから値を渡す引数。 |
+| prompt / agent | `prompt: "入力を確認してください: $ARGUMENTS"` | 必須。ここでの`$ARGUMENTS`はHookのイベントJSON。Skillの利用者引数とは別。 |
+| prompt / agent | `model: sonnet` | 評価に使うモデル。省略時は高速なモデル。agent型は実験的。 |
+
+### 別の型へ置き換える例
+
+前の完全例の内側の`hooks`配列に置く、HTTPハンドラーの例です。サービスを別途起動し、応答はHookのJSON仕様に合わせます。
+
+```yaml
+- type: http
+  url: http://localhost:8080/check
+  headers:
+    Authorization: "Bearer $HOOK_TOKEN"
+  allowedEnvVars: [HOOK_TOKEN]
+  timeout: 5
+  statusMessage: 検査サービスに問い合わせ中
+```
+
+以下は`PostToolUse`用のMCPハンドラーの例です。Pluginの`.mcp.json`に`scanner`を構成し、接続済みである必要があります。
+
+```yaml
+- type: mcp_tool
+  server: plugin:my-plugin:scanner
+  tool: scan
+  input:
+    file: "${tool_input.file_path}"
+```
+
+モデルの判断が必要なら、たとえば`Stop`イベントのハンドラーとして次を使います。イベントによって対応する型が異なるため、用途ごとに公式のイベント仕様を確認してください。
+
+```yaml
+- type: prompt
+  prompt: >-
+    入力JSONを確認してください: $ARGUMENTS
+    stop_hook_activeがtrueなら終了を許可してください。
+    そうでなければ、最終報告で検証済みと未確認を区別しているか判定してください。
+    許可は {"ok": true}、不足時は {"ok": false, "reason": "不足内容"} を返してください。
+  timeout: 30
+```
+
+ファイルの確認まで必要な場合は`type: agent`を検討します。HTTP・MCPの接続失敗は拒否と同義ではなく、モデル判定も固定ルールの代替にはなりません。
+
+### PluginのSubagentにも検査を適用する場合
+
+`agents/<name>.md`に`hooks`を追加する代わりに、後述の`hooks/hooks.json`へ登録します。Plugin全体のツールHookはSubagent内のツールにも適用されるため、特定担当だけを対象にするなら、スクリプトで入力の`agent_type`などを確認します。`PreToolUse.matcher`にSubagent名を書く方法ではありません。
+
+実際の入力ログで識別子を確認し、親セッションや別担当には適用しないテストも用意します。出典: [Hookの設定場所と入力](https://code.claude.com/docs/en/hooks.md)。
+
 ## 推奨する設計基準
 
 ### 対象と副作用を小さくする
