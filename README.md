@@ -10,6 +10,21 @@
 
 確認日: 2026-09-15。リンク先はClaude Code公式ドキュメントの英語版です。仕様や利用条件は更新されるため、実装時にはリンク先も確認してください。
 
+### 必ず確認するドキュメント（Markdown版）
+
+Plugin開発に取り組む際は、まず`plugins.md`と`plugin-evals.md`を読み、作成方法と評価方法を確認してください。あわせて、構成要素の仕様と、Pluginに記述する指示・作業手順の品質を考えるためのベストプラクティスも確認します。
+
+| 確認すべきURL | 確認する内容 |
+| --- | --- |
+| [plugins.md](https://code.claude.com/docs/en/plugins.md) | Pluginの作成方法、構成、ローカルテストの流れ。 |
+| [plugin-evals.md](https://code.claude.com/docs/en/plugin-evals.md) | Pluginの評価ケース、採点、期待する動作の検証方法。 |
+| [skills.md](https://code.claude.com/docs/en/skills.md) | Skillの書き方、呼び出し条件、引数、補助資料の扱い。 |
+| [hooks-guide.md](https://code.claude.com/docs/en/hooks-guide.md) | Hookによる自動化の考え方と作成手順。 |
+| [sub-agents.md](https://code.claude.com/docs/en/sub-agents.md) | Subagentの定義、担当作業、ツールなどの設定。 |
+| [hooks.md](https://code.claude.com/docs/en/hooks.md) | Hookのイベント、設定形式、入出力・終了コードの仕様。 |
+| [plugins-reference.md](https://code.claude.com/docs/en/plugins-reference.md) | Manifest、ディレクトリ構成、各構成要素とCLIの詳細仕様。 |
+| [best-practices.md](https://code.claude.com/docs/en/best-practices.md) | Claude Codeを効果的に使うためのベストプラクティス。Plugin内の指示や作業手順を設計する際にも参照する。 |
+
 ### 最初に読む資料
 
 | 資料 | 分かること・読むタイミング |
