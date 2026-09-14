@@ -53,7 +53,7 @@ claude --plugin-dir ./my-plugin
 
 配布前には、ローカルMarketplaceからインストールしたキャッシュ内に資料があることも確かめる。利用者の既存設定を変えない検証が必要なら、専用の一時`CLAUDE_CONFIG_DIR`を使う。
 
-GitHub Actionsを作る場合は、PRと`main`で同じ構成検証を行い、タグPushではタグとManifest版を照合してからReleaseを作成する。タグを作る前に通常CIの成功を確認し、タグを移動して再リリースする運用にしない。
+GitHub Actionsを作る場合は、PRのOpen時・更新時に構成検証を行い、タグPushではタグとManifest版を照合してからReleaseを作成する。タグを作る前にPRのCI成功を確認し、タグを移動して再リリースする運用にしない。
 
 Pluginのファイルを変更するPRでは、`plugin.json`の`version`も更新する。Releaseタグの直前コミットでも、直前版からの変更をCIで確認する。ドキュメントやCIだけの変更では、Plugin版を不要に上げない。
 

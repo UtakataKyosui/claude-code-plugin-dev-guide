@@ -44,4 +44,4 @@ Claude Codeを導入・認証済みの環境で、Marketplaceが公開された�
 
 Manifestの`version`を更新したら、`plugin-dev-guide--v<version>`タグを対象コミットへPushします。GitHub ActionsがタグとManifestを照合し、成功時にGitHub Releaseを作成します。詳細、CIの作成例、必要な権限は同梱の[リリース管理資料](references/release-management.md)を参照してください。
 
-Plugin配下の変更を含むPRでは、CIがベース版との差分を調べ、`plugin.json`の`version`更新を要求します。Release CIはタグ直前のコミットでも版が変わったことを確認するため、版を更新していないコミットへのタグ付けは失敗します。
+Plugin配下の変更を含むPRでは、PRのOpen時・更新時にCIがベース版との差分を調べ、`plugin.json`の`version`更新を要求します。Release CIはタグ直前のコミットでも版が変わったことを確認するため、版を更新していないコミットへのタグ付けは失敗します。

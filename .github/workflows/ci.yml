@@ -2,9 +2,7 @@ name: Plugin CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
-  workflow_dispatch:
+    types: [opened, synchronize]
 
 permissions:
   contents: read
@@ -26,16 +24,9 @@ jobs:
           node scripts/sync-plugin-docs.mjs --check
           node scripts/check-plugin.mjs
       - name: Require a Plugin version bump when Plugin files change
-        if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/check-version-change.mjs "$BASE_SHA" "$HEAD_SHA"
-      - name: Require a Plugin version bump on direct main pushes
-        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-        env:
-          BASE_SHA: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
         run: node scripts/check-version-change.mjs "$BASE_SHA" "$HEAD_SHA"
       - name: Install Claude Code
         run: npm install --global @anthropic-ai/claude-code

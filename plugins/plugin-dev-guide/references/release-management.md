@@ -10,7 +10,7 @@
 | --- | --- |
 | `plugins/plugin-dev-guide/.claude-plugin/plugin.json` | Pluginの正規バージョン。`version`はSemVer形式にする。 |
 | `plugin-dev-guide--vX.Y.Z` | このPluginのリリースタグ。Manifestの`version`と完全一致させる。 |
-| `.github/workflows/ci.yml` | PR、`main`へのPush、手動実行で構成・同期・公式スキーマを検証する。 |
+| `.github/workflows/ci.yml` | PRのOpen時と更新時（`opened`・`synchronize`）に構成・同期・公式スキーマを検証する。 |
 | `.github/workflows/release.yml` | 上記タグのPushで検証後にGitHub Releaseを作成する。 |
 | `scripts/check-release-tag.mjs` | タグとManifest版の不一致を失敗にする。 |
 | `scripts/check-version-change.mjs` | Plugin本体を変更したPRでManifest版が上がっているか確認する。 |
@@ -55,7 +55,7 @@ PRでPlugin配下のファイルを変更した場合、`Plugin CI`はベース�
 
 ## CIが検証すること
 
-通常CIは、配布用`references/`と`docs/`の同期、Marketplace・Manifest・Skill参照の整合、Claude CodeによるMarketplaceとPluginのスキーマ検証を行います。PRと直接`main`へPushした変更のどちらでも、Plugin本体の変更を含む場合はベースとの差分で`plugin.json`の`version`更新を確認します。ドキュメントだけの変更では版上げを要求しません。
+通常CIはPRのOpen時と更新時（`opened`・`synchronize`）に、配布用`references/`と`docs/`の同期、Marketplace・Manifest・Skill参照の整合、Claude CodeによるMarketplaceとPluginのスキーマ検証を行います。Plugin本体の変更を含む場合はベースとの差分で`plugin.json`の`version`更新を確認します。ドキュメントだけの変更では版上げを要求しません。
 
 リリースCIは上記に加えて、タグがManifestの`name`と`version`から得られる名前と一致するか検証します。一致しない場合、GitHub Releaseを作成しません。これはタグのPush後に実行されるため、不一致タグ自体のPushを止めるものではありません。
 
