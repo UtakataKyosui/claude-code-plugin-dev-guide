@@ -1,0 +1,12 @@
+{
+  "name": "plugin-dev-guide-marketplace",
+  "owner": { "name": "UtakataKyosui" },
+  "metadata": { "description": "Claude Code Plugin開発ガイドを配布するMarketplace" },
+  "plugins": [
+    {
+      "name": "plugin-dev-guide",
+      "source": "./plugins/plugin-dev-guide",
+      "description": "Claude Code Pluginの設計・作成・レビュー・検証を日本語で支援するガイド"
+    }
+  ]
+}

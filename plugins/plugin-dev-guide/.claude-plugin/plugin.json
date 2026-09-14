@@ -1,0 +1,8 @@
+{
+  "name": "plugin-dev-guide",
+  "version": "0.1.0",
+  "description": "公式資料と設計ガイドを使い、Claude Code Pluginの作成・レビュー・検証を支援します。",
+  "author": { "name": "UtakataKyosui" },
+  "repository": "https://github.com/UtakataKyosui/claude-code-plugin-dev-guide",
+  "keywords": ["plugin-development", "skills", "hooks", "subagents", "japanese"]
+}

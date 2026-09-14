@@ -4,11 +4,64 @@
 
 公式ドキュメントへのリンクを入口として、設計・実装・検証・配布までの流れをまとめます。初めてPluginを作る人や、チームで再利用できる開発手順を整えたい人を対象にしています。
 
-このREADMEのコードは学習用の作成例です。サンプルPluginの実ファイルは同梱していません。
+このリポジトリは、ガイドを読むためのドキュメント集と、ガイドをClaude Codeから利用するためのPlugin Marketplaceを兼ねています。下の開発手順にある`my-plugin`は学習用の例です。配布する実際のPluginは`plugins/plugin-dev-guide/`にあります。
+
+## ガイドPluginを使う
+
+Marketplace名は`plugin-dev-guide-marketplace`、Plugin名は`plugin-dev-guide`です。Claude Codeを導入・認証済みの環境で使います。
+
+この構成がGitHubへpushされた後は、Claude Codeの対話画面でインストールできます。
+
+```text
+/plugin marketplace add UtakataKyosui/claude-code-plugin-dev-guide
+/plugin install plugin-dev-guide@plugin-dev-guide-marketplace
+/reload-plugins
+```
+
+ローカルで試す場合は、このリポジトリのルートで`claude`を起動し、最初のコマンドを`/plugin marketplace add .`に置き換えます。導入操作はClaude Codeの設定に保存されます。
+
+```text
+/plugin-dev-guide:guide 変更差分をレビューするPluginを./review-helperに作って
+/plugin-dev-guide:guide SkillとSubagentの使い分けを説明して
+/plugin-dev-guide:review ./review-helper
+```
+
+`guide`は目的の整理から実装・検証・導入説明までを支援します。`review`は構成、フロントマター、配布時の参照、動作評価の不足を点検します。説明やレビューだけの依頼ではファイルを変更しません。どちらも関連する自然言語の依頼で選択可能です。
+
+設計資料はPluginに同梱し、インストール後も利用できます。起動時のHookや外部接続は追加していません。詳しい使い方・更新方法は[Plugin README](plugins/plugin-dev-guide/README.md)を参照してください。
+
+## Marketplaceの構成と開発
+
+```text
+.claude-plugin/marketplace.json        # 配布カタログ
+docs/                                # 既存の設計資料（正本）
+plugins/plugin-dev-guide/
+  .claude-plugin/plugin.json          # Plugin情報・バージョン
+  skills/guide/SKILL.md               # 作成・設計ガイド
+  skills/review/SKILL.md              # 既存Pluginのレビュー
+  references/                        # 配布に含める資料
+scripts/sync-plugin-docs.mjs           # 正本を配布用資料へ同期
+scripts/check-plugin.mjs               # 配布構成・参照の確認
+```
+
+リポジトリの開発用スクリプトにはNode.js 18以降を使います。Pluginの利用自体にNode.jsは不要です。`docs/`を更新したら配布用のコピーを同期してください。コピーを直接編集せず、リポジトリ外への参照で代用しないでください。
+
+```sh
+node scripts/sync-plugin-docs.mjs
+node scripts/sync-plugin-docs.mjs --check
+node scripts/check-plugin.mjs
+claude plugin validate .
+claude plugin validate ./plugins/plugin-dev-guide
+claude --plugin-dir ./plugins/plugin-dev-guide
+```
+
+`references/workflow.md`はPlugin専用の手順書です。リリースでは`plugin.json`の`version`を更新し、同期・検証を行ってから公開します。動作確認のケースは[テスト手順](tests/plugin-guide.md)にまとめています。構文・インストールの成功と、モデルが依頼を正しく処理したことは別々に確認します。
 
 ## 良い構成要素を設計するためのガイド
 
 公式資料をもとに、設計基準・具体例・避けたい設計・検証方法をまとめています。
+
+補助スクリプトは、複雑な処理ならPython＋uv、単純なコマンド連結ならShellを候補にします。依存の宣言・固定と、Hook発火前の環境準備については[スクリプトの言語と依存管理](docs/hooks.md#スクリプトの言語と依存管理を選ぶ)を参照してください。
 
 | ガイド | 主な観点 |
 | --- | --- |
