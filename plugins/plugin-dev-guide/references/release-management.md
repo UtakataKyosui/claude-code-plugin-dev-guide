@@ -13,6 +13,8 @@
 | `.github/workflows/ci.yml` | PR、`main`へのPush、手動実行で構成・同期・公式スキーマを検証する。 |
 | `.github/workflows/release.yml` | 上記タグのPushで検証後にGitHub Releaseを作成する。 |
 | `scripts/check-release-tag.mjs` | タグとManifest版の不一致を失敗にする。 |
+| `scripts/check-version-change.mjs` | Plugin本体を変更したPRでManifest版が上がっているか確認する。 |
+| `scripts/check-release-version.mjs` | Releaseタグの直前コミットでManifest版が上がっているか確認する。 |
 
 たとえばManifestが`"version": "0.2.0"`なら、リリースタグは`plugin-dev-guide--v0.2.0`です。先頭の`v`、Plugin名、区切りの`--`も含めて一致が必要です。`0.2.0-beta.1`ならタグは`plugin-dev-guide--v0.2.0-beta.1`となり、Releaseはpre-releaseとして作成されます。
 
@@ -49,9 +51,11 @@ Plugin MarketplaceはManifestの`version`により更新を認識します。そ
 
 5. `Release Plugin Dev Guide`が成功すると、タグ名・バージョンをタイトルにしてGitHub Releaseが作成される。`--generate-notes`を使うため、リリースノートはGitHubが対象範囲の変更から生成する。作成後に内容を確認し、必要ならGitHub上で追記する。
 
+PRでPlugin配下のファイルを変更した場合、`Plugin CI`はベースブランチの`plugin.json`と比較して`version`が変わっていることを確認します。READMEやCIだけの変更では版上げを要求しません。Release CIではさらに、Pushされたタグの直前コミットとタグ対象コミットのManifest版が異なることを確認します。版を変更していないコミットに手動でタグを付けてもReleaseは作成されません。
+
 ## CIが検証すること
 
-通常CIは、配布用`references/`と`docs/`の同期、Marketplace・Manifest・Skill参照の整合、Claude CodeによるMarketplaceとPluginのスキーマ検証を行います。
+通常CIは、配布用`references/`と`docs/`の同期、Marketplace・Manifest・Skill参照の整合、Claude CodeによるMarketplaceとPluginのスキーマ検証を行います。PRと直接`main`へPushした変更のどちらでも、Plugin本体の変更を含む場合はベースとの差分で`plugin.json`の`version`更新を確認します。ドキュメントだけの変更では版上げを要求しません。
 
 リリースCIは上記に加えて、タグがManifestの`name`と`version`から得られる名前と一致するか検証します。一致しない場合、GitHub Releaseを作成しません。これはタグのPush後に実行されるため、不一致タグ自体のPushを止めるものではありません。
 

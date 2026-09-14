@@ -55,6 +55,8 @@ claude --plugin-dir ./my-plugin
 
 GitHub Actionsを作る場合は、PRと`main`で同じ構成検証を行い、タグPushではタグとManifest版を照合してからReleaseを作成する。タグを作る前に通常CIの成功を確認し、タグを移動して再リリースする運用にしない。
 
+Pluginのファイルを変更するPRでは、`plugin.json`の`version`も更新する。Releaseタグの直前コミットでも、直前版からの変更をCIで確認する。ドキュメントやCIだけの変更では、Plugin版を不要に上げない。
+
 ## 完成条件
 
 - 目的と利用例、対象外が説明されている。
